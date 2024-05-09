@@ -1,3 +1,4 @@
+import atexit
 import os.path
 import pickle
 import time
@@ -16,6 +17,8 @@ class CacheManager:
             QTYPE.AAAA: {}
         }
 
+        atexit.register(self.save_cache_to_disk)
+
     def save_cache_to_disk(self):
         with open(self.CACHE_FILE, 'wb') as file:
             pickle.dump(self.cache, file)
@@ -24,6 +27,7 @@ class CacheManager:
         if os.path.exists(self.CACHE_FILE):
             with open(self.CACHE_FILE, 'rb') as file:
                 self.cache = pickle.load(file)
+                print("Loaded cache from disk")
 
     def remove_expired_cache(self):
         cur_time = time.time()

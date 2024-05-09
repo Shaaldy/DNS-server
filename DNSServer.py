@@ -20,18 +20,20 @@ class DnsServer:
             dns_res = DNSResolver()
             while True:
                 data, addr = s.recvfrom(1024)
-                print(f"Get response from {addr}: {data}")
+                print(f"Get response from {addr}")
                 dns_request = DNSRecord.parse(data)
                 dns_response = dns_res.dns_resolve(dns_request)
                 s.sendto(dns_response.pack(), addr)
-                print(f"Sending response to {addr}: {dns_response}")
+                print(f"Sending response to {addr}")
 
 
 class DNSResolver:
     def __init__(self):
         self.cache_manager = CacheManager()
+        self.cache_manager.load_cache_from_disk()
 
     def dns_resolve(self, dns_request):
+        print(self.cache_manager.cache)
         qtype = dns_request.q.qtype
         key = dns_request.q.qname
 
