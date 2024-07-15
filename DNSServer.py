@@ -1,11 +1,9 @@
 import socket
 import time
-
 from dnslib import DNSRecord, QTYPE
-
 from Cache_manager import CacheManager
 
-TTL = 10
+TTL = 1
 
 
 class DnsServer:
@@ -22,10 +20,10 @@ class DnsServer:
                 dns_res.check_actual_data()
                 data, addr = s.recvfrom(1024)
                 dns_request = DNSRecord.parse(data)
+                print(f"Received request from {addr} with qtype: {QTYPE[dns_request.q.qtype]} ({dns_request.q.qtype})")
                 dns_response = dns_res.dns_resolve(dns_request)
-                print(f"Get response from {addr}")
-                s.sendto(dns_response.pack(), addr)
-                print(f"Sending response to {addr}")
+                if dns_response:
+                    s.sendto(dns_response.pack(), addr)
 
 
 class DNSResolver:
@@ -45,6 +43,7 @@ class DNSResolver:
         if key in cache and isinstance(cache[key], list) and cache[key]:
             response_record, ttl_end_time = cache[key]
             cache[key] = [response_record, time.time() + TTL]
+            print("Response from cache")
             return response_record
 
         response_record = self.send_request_to_server(dns_request)
@@ -68,25 +67,32 @@ class DNSResolver:
 
     @staticmethod
     def send_request_to_server(dns_request):
-        def query_server(server, dns_request):
-            with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
-                s.settimeout(15)
-                try:
+        def query_server(server):
+            try:
+                if ':' in server[0]:
+                    family = socket.AF_INET6
+                else:
+                    family = socket.AF_INET
+                with socket.socket(family, socket.SOCK_DGRAM) as s:
+                    s.settimeout(15)
                     s.sendto(dns_request.pack(), server)
                     data, _ = s.recvfrom(1024)
                     return DNSRecord.parse(data)
-                except socket.timeout:
-                    print(f"Timeout while querying server {server}")
-                    return None
+            except socket.timeout:
+                print(f"Timeout while querying server {server}")
+                return None
+            except OSError as e:
+                print(f"OS error while querying server {server}: {e}")
+                return None
 
         upstream_servers = [
-            ("192.5.5.241", 53),  # f.root-servers.net
-            ("192.203.230.10", 53),  # e.root-servers.net
-            ("192.58.128.30", 53)  # j.root-servers.net
+            ("192.5.5.241", 53),  # f.root-servers.net (IPv4)
+            ("192.203.230.10", 53),  # e.root-servers.net (IPv4)
+            ("192.58.128.30", 53),  # j.root-servers.net (IPv4)
         ]
 
         for server in upstream_servers:
-            response = query_server(server, dns_request)
+            response = query_server(server)
             if response:
                 break
 
@@ -94,7 +100,7 @@ class DNSResolver:
             print("Timed out while querying all upstream servers")
             return None
 
-        while response.header.a == 0:
+        while response and response.header.a == 0:
             authority_section = response.auth
             additional_section = response.ar
 
@@ -102,20 +108,16 @@ class DNSResolver:
                 print("No authority section found in the response")
                 return None
 
-            ns_record = authority_section[0]
-            ns_name = str(ns_record.rdata)
-
             next_server = None
             for record in additional_section:
-                rname = str(record.rname)
-                if rname == ns_name and record.rtype == QTYPE.A:
+                if record.rtype == QTYPE.A:
                     next_server = str(record.rdata)
                     break
 
             if not next_server:
                 break
 
-            response = query_server((next_server, 53), dns_request)
+            response = query_server((next_server, 53))
             if not response:
                 break
 
