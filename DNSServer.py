@@ -14,7 +14,7 @@ class DnsServer:
     def start(self):
         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
             s.bind((self.ip, self.port))
-            print(f"Server started on {self.ip}:{self.port}.")
+            #print(f"Server started on {self.ip}:{self.port}.")
             dns_res = DNSResolver()
             while True:
                 dns_res.check_actual_data()
@@ -93,6 +93,8 @@ class DNSResolver:
 
         for server in upstream_servers:
             response = query_server(server)
+            if len(response.ar) == 0:
+                continue
             if response:
                 break
 
