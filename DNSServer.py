@@ -3,7 +3,7 @@ import time
 from dnslib import DNSRecord, QTYPE
 from Cache_manager import CacheManager
 
-TTL = 1
+TTL = 100
 
 
 class DnsServer:
@@ -14,7 +14,7 @@ class DnsServer:
     def start(self):
         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
             s.bind((self.ip, self.port))
-            #print(f"Server started on {self.ip}:{self.port}.")
+            print(f"Server started on {self.ip}:{self.port}.")
             dns_res = DNSResolver()
             while True:
                 dns_res.check_actual_data()

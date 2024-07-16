@@ -1,10 +1,9 @@
 import subprocess
-from DNSServer import DnsServer
 
 # Список команд для тестирования DNS-сервера
 commands = [
     "chcp 437",
-    "nslookup amazon.com 127.0.0.1",
+    "nslookup -debug amazon.com 127.0.0.1",
     "nslookup -type=NS amazon.com 127.0.0.1",
     "nslookup -type=A amazon.com 127.0.0.1",
     "nslookup -type=PTR amazon.com 127.0.0.1",
