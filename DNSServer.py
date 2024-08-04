@@ -3,7 +3,7 @@ import time
 from dnslib import DNSRecord, QTYPE
 from Cache_manager import CacheManager
 
-TTL = 100
+TTL = 86400 # 1 day
 
 
 class DnsServer:
@@ -24,6 +24,7 @@ class DnsServer:
                 dns_response = dns_res.dns_resolve(dns_request)
                 if dns_response:
                     s.sendto(dns_response.pack(), addr)
+                    print(f"Ответ отправлен: id запроса {dns_request.header.id}, id ответа {dns_response.header.id}")
 
 
 class DNSResolver:
@@ -33,7 +34,7 @@ class DNSResolver:
 
     def dns_resolve(self, dns_request):
         qtype = dns_request.q.qtype
-        key = dns_request.q.qname
+        key = (dns_request.q.qname, dns_request.header.id)
 
         if qtype not in self.cache_manager.cache:
             raise ValueError(f"DNSRequest type {qtype} not supported")

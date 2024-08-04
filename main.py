@@ -1,7 +1,4 @@
-import multiprocessing
-import time
 from DNSServer import DnsServer
-import cmd_test
 
 
 def run_dns_server():
