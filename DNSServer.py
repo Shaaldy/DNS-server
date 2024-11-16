@@ -1,9 +1,18 @@
 import socket
+import sys
 import time
-from dnslib import DNSRecord, QTYPE
+from dnslib import DNSRecord, QTYPE, DNSHeader
 from Cache_manager import CacheManager
 
-TTL = 86400 # 1 day
+TTL = 86_400 # 1 day
+
+
+def send_empty_response(sock, addr, dns_request):
+    header = DNSHeader(id=dns_request.header.id, qr=1, aa=1, ra=1)
+    question = dns_request.q
+    response = DNSRecord(header, q=question)
+    sock.sendto(response.pack(), addr)
+    print("No records found. Empty response sent.")
 
 
 class DnsServer:
@@ -24,7 +33,8 @@ class DnsServer:
                 dns_response = dns_res.dns_resolve(dns_request)
                 if dns_response:
                     s.sendto(dns_response.pack(), addr)
-                    print(f"Ответ отправлен: id запроса {dns_request.header.id}, id ответа {dns_response.header.id}")
+                else:
+                    send_empty_response(s, addr, dns_request)
 
 
 class DNSResolver:
@@ -34,7 +44,7 @@ class DNSResolver:
 
     def dns_resolve(self, dns_request):
         qtype = dns_request.q.qtype
-        key = (dns_request.q.qname, dns_request.header.id)
+        key = dns_request.q.qname
 
         if qtype not in self.cache_manager.cache:
             raise ValueError(f"DNSRequest type {qtype} not supported")
@@ -45,9 +55,12 @@ class DNSResolver:
             response_record, ttl_end_time = cache[key]
             cache[key] = [response_record, time.time() + TTL]
             print("Response from cache")
+            response_record.header.id = dns_request.header.id
             return response_record
 
-        response_record = self.send_request_to_server(dns_request)
+        else:
+            response_record = self.send_request_to_server(dns_request)
+
         if response_record is not None:
             ttl_end_time = time.time() + TTL
             cache[key] = [response_record, ttl_end_time]
