@@ -8,7 +8,7 @@ from dnslib import QTYPE
 
 
 class CacheManager:
-    CACHE_FILE = './dns_cache.pkl'
+    CACHE_FILE = '../dns_cache.pkl'
 
     def __init__(self):
         self.cache = {

@@ -1,4 +1,4 @@
-from DNSServer import DnsServer
+from DNS.DNSServer import DnsServer
 
 
 def run_dns_server():

@@ -1,6 +1,6 @@
 import multiprocessing
 import time
-from DNSServer import DnsServer
+from DNS.DNSServer import DnsServer
 import cmd_test
 
 

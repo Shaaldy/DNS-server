@@ -1,8 +1,7 @@
 import socket
-import sys
 import time
 from dnslib import DNSRecord, QTYPE, DNSHeader
-from Cache_manager import CacheManager
+from DNS.Cache_manager import CacheManager
 
 TTL = 86_400 # 1 day
 
